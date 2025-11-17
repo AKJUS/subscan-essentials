@@ -69,6 +69,8 @@ type MockDao struct {
 	mock.Mock
 }
 
+func (m *MockDao) SplitBlockTable(blockNum uint) {}
+
 func (m *MockDao) GetBlockNumArr(ctx context.Context, start, end uint) []int {
 	return nil
 }

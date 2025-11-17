@@ -44,6 +44,8 @@ func (s *Service) CreateChainBlock(ctx context.Context, hash string, block *smod
 		util.Logger().Error(err)
 	}
 
+	s.dao.SplitBlockTable(blockNum)
+
 	txn := s.dao.DbBegin()
 	defer s.dao.DbRollback(txn)
 

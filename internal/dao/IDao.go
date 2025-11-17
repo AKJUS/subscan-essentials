@@ -17,6 +17,7 @@ type IDao interface {
 	CreateBlock(*GormDB, *model.ChainBlock) (err error)
 	UpdateEventAndExtrinsic(*GormDB, *model.ChainBlock, int, int, int, string, bool, bool) error
 	GetNearBlock(uint) *model.ChainBlock
+	SplitBlockTable(blockNum uint)
 	BlocksReverseByNum([]uint) map[uint]model.ChainBlock
 	GetBlockByHash(context.Context, string) *model.ChainBlock
 	GetBlockByNum(context.Context, uint) *model.ChainBlock

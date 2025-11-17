@@ -10,19 +10,19 @@ func (d *Dao) Migration() {
 	db := d.db
 	var blockNum uint
 	if d.redis != nil {
-		num, _ := d.GetBestBlockNum(context.TODO())
+		num, _ := d.GetFinalizedBlockNum(context.TODO())
 		blockNum = uint(num)
 	}
 	if d.DbDriver == "mysql" {
 		db = db.Set("gorm:table_options", "ENGINE=InnoDB")
 	}
-	_ = db.AutoMigrate(d.InternalTables(blockNum)...)
+	_ = db.AutoMigrate(d.internalTables(blockNum)...)
 	for i := 0; uint(i) <= blockNum/model.SplitTableBlockNum; i++ {
 		d.AddIndex(uint(i) * model.SplitTableBlockNum)
 	}
 }
 
-func (d *Dao) InternalTables(blockNum uint) (models []interface{}) {
+func (d *Dao) internalTables(blockNum uint) (models []interface{}) {
 	models = append(models, model.RuntimeVersion{})
 	for i := 0; uint(i) <= blockNum/model.SplitTableBlockNum; i++ {
 		models = append(

@@ -9,6 +9,20 @@ import (
 	"github.com/itering/subscan/util/address"
 )
 
+var splitBlockTableCache = model.RedisKeyPrefix() + "split_block_table"
+
+func (d *Dao) SplitBlockTable(blockNum uint) {
+	ctx := context.Background()
+	currentTableBlock := model.ChainBlock{BlockNum: blockNum}
+	tableName := TableNameFromInterface(currentTableBlock, d.db)
+	if s := d.redis.GetCacheString(ctx, splitBlockTableCache); s != tableName {
+		if !d.db.Migrator().HasTable(tableName) {
+			d.AddIndex(blockNum / model.SplitTableBlockNum * model.SplitTableBlockNum)
+		}
+		_ = d.redis.SetCache(ctx, splitBlockTableCache, tableName, 3600*24*30)
+	}
+}
+
 // CreateBlock mysql db transaction
 func (d *Dao) CreateBlock(txn *GormDB, cb *model.ChainBlock) (err error) {
 	query := txn.Scopes().Scopes(d.TableNameFunc(cb), model.IgnoreDuplicate).Create(cb)
@@ -22,7 +36,6 @@ func (d *Dao) CreateBlock(txn *GormDB, cb *model.ChainBlock) (err error) {
 				if d.DbDriver == "mysql" {
 					db = db.Set("gorm:table_options", "ENGINE=InnoDB")
 				}
-				_ = db.AutoMigrate(d.InternalTables(cb.BlockNum + model.SplitTableBlockNum)...)
 				d.AddIndex(cb.BlockNum + model.SplitTableBlockNum)
 			}()
 		}
