@@ -10,7 +10,7 @@ func (d *Dao) Migration() {
 	db := d.db
 	var blockNum uint
 	if d.redis != nil {
-		num, _ := d.GetFillBestBlockNum(context.TODO())
+		num, _ := d.GetBestBlockNum(context.TODO())
 		blockNum = uint(num)
 	}
 	if d.DbDriver == "mysql" {
