@@ -1,6 +1,7 @@
 package model
 
 import (
+	"context"
 	"github.com/itering/subscan/util"
 	"strings"
 
@@ -112,4 +113,21 @@ func RedisKeyPrefix() string {
 
 func MetadataCacheKey() string {
 	return RedisKeyPrefix() + "metadata"
+}
+
+func AddOrUpdateItem(c context.Context, db *gorm.DB, item interface{}, keys []string, updates ...string) *gorm.DB {
+	var keyFields []clause.Column
+	for _, key := range keys {
+		keyFields = append(keyFields, clause.Column{Name: key})
+	}
+	if len(updates) > 0 {
+		return db.WithContext(c).Clauses(clause.OnConflict{
+			Columns:   keyFields,
+			DoUpdates: clause.AssignmentColumns(updates),
+		}).Create(item)
+	}
+	return db.WithContext(c).Clauses(clause.OnConflict{
+		Columns:   keyFields,
+		UpdateAll: true,
+	}).Create(item)
 }

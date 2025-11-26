@@ -8,6 +8,7 @@ import (
 	"github.com/itering/subscan/share/metrics"
 	"github.com/itering/subscan/util/mq"
 	"github.com/itering/substrate-api-rpc/model"
+	"github.com/itering/substrate-api-rpc/storage"
 	"sync"
 	"time"
 
@@ -98,6 +99,7 @@ const (
 	wsBlock
 	wsEvent
 	wsSpec
+	wsSessionIndex
 )
 
 func (s *Service) FillBlockData(ctx context.Context, blockNum uint, force bool) (err error) {
@@ -112,7 +114,7 @@ func (s *Service) FillBlockData(ctx context.Context, blockNum uint, force bool) 
 	}()
 
 	conn := s.dbStorage.RPCPool().Conn
-
+	now := time.Now()
 	v := &model.JsonRpcResult{}
 
 	// Block Hash
@@ -147,7 +149,6 @@ func (s *Service) FillBlockData(ctx context.Context, blockNum uint, force bool) 
 	if err = websocket.SendWsRequest(conn, v, rpc.ChainGetRuntimeVersion(wsSpec, blockHash)); err != nil {
 		return fmt.Errorf("websocket send error: %v", err)
 	}
-
 	var specVersion int
 
 	if r := v.ToRuntimeVersion(); r == nil {
@@ -165,12 +166,27 @@ func (s *Service) FillBlockData(ctx context.Context, blockNum uint, force bool) 
 		return errors.New("nil runtime version")
 	}
 
+	// session index
+	if err = websocket.SendWsRequest(conn, v, rpc.StateGetStorage(wsSessionIndex, util.SessionIndexStorageKey, blockHash)); err != nil {
+		return fmt.Errorf("websocket send error: %v", err)
+	}
+
+	var sessionIndex uint
+	sessionIndexData, err := v.ToString()
+	if err == nil || sessionIndexData != "" {
+		r, _, err := storage.Decode(sessionIndexData, "U32", nil)
+		if err == nil {
+			sessionIndex = uint(r.ToInt())
+		}
+	}
+
 	var setFinalized = func() {
 		_ = s.dao.SaveFillAlreadyFinalizedBlockNum(context.TODO(), int(blockNum))
 	}
 	// for Create
-	if err = s.CreateChainBlock(ctx, blockHash, &rpcBlock.Block, event, specVersion); err == nil {
+	if err = s.CreateChainBlock(ctx, blockHash, &rpcBlock.Block, event, specVersion, sessionIndex); err == nil {
 		_ = s.dao.SaveFillAlreadyBlockNum(ctx, int(blockNum))
+		util.Logger().Debug(fmt.Sprintf("Fill Block num %d hash %s use %d ms", blockNum, blockHash, time.Since(now).Milliseconds()))
 		setFinalized()
 	} else {
 		log.Printf("Create chain block error %v", err)

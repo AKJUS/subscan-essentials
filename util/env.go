@@ -24,7 +24,10 @@ var (
 )
 
 // EventStorageKey state system.events storage key
-const EventStorageKey = "0x26aa394eea5630e07c48ae0c9558cef780d41e5e16056765bc8461851072c9d7"
+const (
+	EventStorageKey        = "0x26aa394eea5630e07c48ae0c9558cef780d41e5e16056765bc8461851072c9d7"
+	SessionIndexStorageKey = "0xcec5070d609dd3497f72bde07fc96ba072763800a36a99fdfc7c10f6415f6ee6"
+)
 
 // GetEnv get env value by key, if not exist return default value
 func GetEnv(key, defaultValue string) string {

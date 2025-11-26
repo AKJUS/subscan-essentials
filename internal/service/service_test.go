@@ -69,6 +69,14 @@ type MockDao struct {
 	mock.Mock
 }
 
+func (m *MockDao) GetSessionValidatorsById(ctx context.Context, sessionId uint) []string {
+	return nil
+}
+
+func (m *MockDao) CreateNewSession(ctx context.Context, sessionId uint, validators []string) error {
+	return nil
+}
+
 func (m *MockDao) SplitBlockTable(blockNum uint) {}
 
 func (m *MockDao) GetBlockNumArr(ctx context.Context, start, end uint) []int {
@@ -91,7 +99,7 @@ func (m *MockDao) DbCommit(*dao.GormDB) {
 func (m *MockDao) DbRollback(*dao.GormDB) {
 }
 
-func (m *MockDao) CreateBlock(*dao.GormDB, *model.ChainBlock) (err error) {
+func (m *MockDao) CreateBlock(context.Context, *dao.GormDB, *model.ChainBlock) (err error) {
 	return nil
 }
 

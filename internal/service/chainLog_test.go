@@ -16,9 +16,6 @@ func TestService_EmitLog(t *testing.T) {
 		"0x054241424501019e89556620e6f4ed93cf9a939349d6928b38e5688ad0abb7cd3b6f8d9c3016021ac1b30fbf4aec0de00d9a288b261da9e4ed4921f64ed6393309ddc230c9cf8d",
 	})
 	assert.NoError(t, err)
-	validatorList := []string{"v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9", "v10"}
-	validator, err := testSrv.EmitLog(txn, 300000, logs, true, validatorList)
+	_, err = testSrv.EmitLog(txn, 300000, logs, true)
 	assert.NoError(t, err)
-	assert.Equal(t, "v3", validator)
-
 }

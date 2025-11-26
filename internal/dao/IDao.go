@@ -14,7 +14,7 @@ type IDao interface {
 	DbCommit(*GormDB)
 	DbRollback(*GormDB)
 
-	CreateBlock(*GormDB, *model.ChainBlock) (err error)
+	CreateBlock(context.Context, *GormDB, *model.ChainBlock) (err error)
 	UpdateEventAndExtrinsic(*GormDB, *model.ChainBlock, int, int, int, string, bool, bool) error
 	GetNearBlock(uint) *model.ChainBlock
 	SplitBlockTable(blockNum uint)
@@ -56,4 +56,7 @@ type IDao interface {
 	RuntimeVersionList() []model.RuntimeVersion
 	RuntimeVersionRaw(spec int) *metadata.RuntimeRaw
 	RuntimeVersionRecent() *model.RuntimeVersion
+
+	GetSessionValidatorsById(ctx context.Context, sessionId uint) []string
+	CreateNewSession(ctx context.Context, sessionId uint, validators []string) error
 }

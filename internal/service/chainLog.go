@@ -4,12 +4,11 @@ import (
 	"fmt"
 	"github.com/itering/subscan/internal/dao"
 	"github.com/itering/subscan/model"
-	"github.com/itering/substrate-api-rpc"
 	"github.com/itering/substrate-api-rpc/storage"
 	"strings"
 )
 
-func (s *Service) EmitLog(txn *dao.GormDB, blockNum uint, l []storage.DecoderLog, finalized bool, validatorList []string) (validator string, err error) {
+func (s *Service) EmitLog(txn *dao.GormDB, blockNum uint, l []storage.DecoderLog, finalized bool) (runtimeLogData []byte, err error) {
 	for index, logData := range l {
 		var jsonRaw model.LogData
 		switch v := logData.Value.(type) {
@@ -27,15 +26,12 @@ func (s *Service) EmitLog(txn *dao.GormDB, blockNum uint, l []storage.DecoderLog
 			Finalized: finalized,
 		}
 		ce.ID = ce.Id()
-		if err = s.dao.CreateLog(txn, &ce); err != nil {
-			return "", err
-		}
-
-		// check validator
 		if strings.EqualFold(ce.LogType, "PreRuntime") {
-			validator = substrate.ExtractAuthor(jsonRaw.Bytes(), validatorList)
+			runtimeLogData = jsonRaw.Bytes()
 		}
-
+		if err = s.dao.CreateLog(txn, &ce); err != nil {
+			return nil, err
+		}
 	}
-	return validator, err
+	return
 }

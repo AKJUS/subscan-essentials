@@ -99,7 +99,7 @@ func init() {
 	}
 	ctx := context.TODO()
 	txn := testDao.DbBegin()
-	err = testDao.CreateBlock(txn, &testBlock)
+	err = testDao.CreateBlock(ctx, txn, &testBlock)
 	if err != nil {
 		panic(err)
 	}
