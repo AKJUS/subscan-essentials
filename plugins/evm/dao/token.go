@@ -17,13 +17,13 @@ import (
 )
 
 type Token struct {
-	Contract    string          `json:"contract" gorm:"primaryKey;auto_increment:false;size:255"`
+	Contract    string          `json:"contract" gorm:"primaryKey;auto_increment:false;size:255;index:holders_contract,priority:2"`
 	Name        string          `json:"name" gorm:"size:255"`
 	Symbol      string          `json:"symbol" gorm:"size:255"`
 	Decimals    uint            `json:"decimals" gorm:"size:32"`
 	TotalSupply decimal.Decimal `json:"totalSupply" gorm:"default: 0;type:decimal(65);"`
 
-	Holders       uint `json:"holders" gorm:"size:32"`
+	Holders       uint `json:"holders" gorm:"size:32;index:holders_contract,priority:1"`
 	TransferCount uint `json:"transfer_count" gorm:"size:32"`
 
 	Category     string `json:"category" gorm:"size:70;index:category"`
@@ -40,6 +40,10 @@ func (c *Token) incrTransferCount(ctx context.Context, count int) {
 
 func (c *Token) RefreshTokenHolder(ctx context.Context, holderCount int) {
 	sg.db.Model(Token{}).WithContext(ctx).Where("contract = ?", c.Contract).Updates(map[string]interface{}{"holders": holderCount})
+}
+
+func (c Token) Cursor() string {
+	return util.Base64Encode(fmt.Sprintf("%d_%s", c.Holders, c.Contract))
 }
 
 func TouchToken(ctx context.Context, address, category string) *Token {
@@ -142,10 +146,14 @@ func (c *Token) mergeTokenInfo(txn *gorm.DB) (err error) {
 }
 
 type TokenHolder struct {
-	ID       uint            `gorm:"primaryKey;autoIncrement;size:32" json:"-"`
+	ID       uint            `gorm:"primaryKey;autoIncrement;size:32;index:balance_id,priority:2" json:"-"`
 	Contract string          `json:"contract" gorm:"index:contract;index:contract_hold,unique;size:100"`
 	Holder   string          `json:"holder" gorm:"index:hold;index:contract_hold,unique;size:100" `
-	Balance  decimal.Decimal `json:"balance" gorm:"default: 0;type:decimal(65);"`
+	Balance  decimal.Decimal `json:"balance" gorm:"default: 0;type:decimal(65);index:balance_id,priority:1"`
+}
+
+func (c TokenHolder) Cursor() string {
+	return util.Base64Encode(fmt.Sprintf("%s_%d", c.Balance.String(), c.ID))
 }
 
 func (c *TokenHolder) TableName() string {
